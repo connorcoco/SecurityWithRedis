@@ -65,8 +65,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String access = jwtUtil.createJwt("access", username, role, 600000L);
         String refresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
 
-        // Refresh 토큰 저장
-        refreshUtil.addRefreshEntity(username, refresh, 86400000L);
+        // Refresh 토큰을 Redis에 저장
+        refreshUtil.addRefreshToken(username, refresh, 86400000L);
 
         //응답 설정
         response.setHeader("access", access);

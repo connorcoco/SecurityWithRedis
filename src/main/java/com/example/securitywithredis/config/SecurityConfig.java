@@ -4,7 +4,7 @@ import com.example.securitywithredis.jwt.CustomLogoutFilter;
 import com.example.securitywithredis.jwt.JWTFilter;
 import com.example.securitywithredis.jwt.JWTUtil;
 import com.example.securitywithredis.jwt.LoginFilter;
-import com.example.securitywithredis.repository.RefreshRepository;
+import com.example.securitywithredis.service.RefreshTokenService;
 import com.example.securitywithredis.util.RefreshUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,14 +26,14 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JWTUtil jwtUtil;
     private final RefreshUtil refreshUtil;
-    private final RefreshRepository refreshRepository;
+    private final RefreshTokenService refreshTokenService;
 
-    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil, RefreshUtil refreshUtil, RefreshRepository refreshRepository) {
+    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration, JWTUtil jwtUtil, RefreshUtil refreshUtil, RefreshTokenService refreshTokenService) {
 
         this.authenticationConfiguration = authenticationConfiguration;
         this.jwtUtil = jwtUtil;
         this.refreshUtil = refreshUtil;
-        this.refreshRepository = refreshRepository;
+        this.refreshTokenService = refreshTokenService;
     }
 
     //AuthenticationManager Bean 등록
@@ -81,7 +81,7 @@ public class SecurityConfig {
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshUtil), UsernamePasswordAuthenticationFilter.class);
 
         http
-                .addFilterBefore(new CustomLogoutFilter(refreshRepository, jwtUtil), LogoutFilter.class);
+                .addFilterBefore(new CustomLogoutFilter(refreshTokenService), LogoutFilter.class);
         //세션 설정
         http
                 .sessionManagement((session) -> session

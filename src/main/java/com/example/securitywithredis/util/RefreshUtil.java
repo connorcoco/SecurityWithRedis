@@ -1,29 +1,32 @@
 package com.example.securitywithredis.util;
 
-import com.example.securitywithredis.domain.entity.RefreshEntity;
-import com.example.securitywithredis.repository.RefreshRepository;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class RefreshUtil {
 
-    private final RefreshRepository refreshRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
-    public RefreshUtil(RefreshRepository refreshRepository){
-        this.refreshRepository = refreshRepository;
+    public RefreshUtil(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
     }
 
-    public void addRefreshEntity(String username, String refresh, Long expiredMs){
-        Date date = new Date(System.currentTimeMillis() + expiredMs);
+    // Refresh token을 Redis에 저장
+    public void addRefreshToken(String username, String refreshToken, long expirationTimeInMillis) {
+        redisTemplate.opsForValue().set(username, refreshToken, expirationTimeInMillis, TimeUnit.MILLISECONDS);
+    }
 
-        RefreshEntity refreshEntity = RefreshEntity.builder()
-                    .username(username)
-                    .refresh(refresh)
-                    .expiration(date.toString())
-                    .build();
+    // Refresh token을 Redis에서 삭제
+    public void removeRefreshToken(String username) {
+        redisTemplate.delete(username);
+    }
 
-        refreshRepository.save(refreshEntity);
+    // Refresh token을 Redis에서 가져오기
+    public String getRefreshToken(String username) {
+        return redisTemplate.opsForValue().get(username);
     }
 }
