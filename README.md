@@ -1,9 +1,8 @@
-# SecurityServer
+# SecurityWithRedis
 
+## 프로젝트 설명
 
-# 프로젝트 설명
-
->SecurityServer는 다양한 기능을 갖춘 Spring Boot 기반의 API 서버 템플릿입니다. 본 템플릿은 **다중 토큰** 처리, **Swagger** 설정, **API 응답 통일**, **Exception 처리**, **Validation**, **JPA** 등을 기본으로 제공합니다. 또한, 데이터베이스는 **MySQL**을 사용하며, 주요 엔티티로는 **UserEntity**와 **RefreshEntity** 테이블이 포함되어 있습니다.
+> **SecurityWithRedis**는 Spring Boot 기반의 API 서버 템플릿으로, **Spring Security**와 **Redis**를 활용하여 **JWT 인증** 시스템에서 **refresh token**을 **Redis에 저장**하고 관리하는 방법을 제공합니다. 기본적으로 **MySQL**을 사용하여 사용자 정보를 저장하며, **refresh token**만 Redis에 저장하여 관리합니다. 또한, 본 템플릿은 **다중 토큰 처리**, **Swagger 설정**, **API 응답 통일**, **Exception 처리**, **Validation**, **JPA** 등을 기본으로 제공합니다.
 
 ## 주요 기능
 - **다중 토큰 처리**: JWT를 이용한 다중 인증 처리
@@ -12,35 +11,36 @@
 - **Exception 처리**: 공통 예외 처리 및 사용자 정의 예외 처리
 - **Validation**: 입력 값 검증을 위한 다양한 검증 기능
 - **JPA**: MySQL 데이터베이스 연동을 위한 JPA 설정
+- **Redis 기반 refresh token 관리**: refresh token을 Redis에 저장하고 관리하여 효율적인 인증 시스템을 구현
 
 ## 데이터베이스 구조
 
-이 프로젝트는 **MySQL** 데이터베이스를 사용하며, 두 개의 주요 엔티티가 포함되어 있습니다: `UserEntity`와 `RefreshEntity`.
+이 프로젝트는 **MySQL** 데이터베이스를 사용하며, 사용자 정보는 MySQL에 저장됩니다. **Refresh Token**은 **Redis**에 저장됩니다.
 
-**1. UserEntity**
+### 1. UserEntity
 
 `UserEntity`는 시스템 사용자 정보를 저장하는 엔티티로, 주로 회원가입 및 사용자 인증에 사용됩니다. 이 엔티티는 다음과 같은 필드를 가집니다:
 
 - **id**: 사용자 고유 ID (자동 생성, 기본 키)
-- **username**: 사용자의 이메일 주소를 저장합니다. (실제 이메일 값이 들어갑니다.)
+- **username**: 사용자의 이메일 주소를 저장합니다.
 - **password**: 사용자의 비밀번호
 - **role**: 사용자의 권한 (기본값: `ROLE_USER`)
 - **accountStatus**: 사용자의 계정 상태 (기본값: `ACTIVE`)
 - **nickname**: 사용자의 닉네임
 - **gender**: 사용자의 성별
 
-`UserEntity`는 **BaseEntity**를 상속받아 공통 필드(예: 생성일자, 수정일자 등)를 사용하며, **JPA**를 통해 자동으로 테이블과 매핑됩니다. 또한, `@DynamicUpdate`와 `@DynamicInsert`를 사용하여 변경된 필드만 업데이트하고, 기본값을 자동으로 삽입할 수 있습니다.
+`UserEntity`는 **BaseEntity**를 상속받아 공통 필드(예: 생성일자, 수정일자 등)를 사용하며, **JPA**를 통해 자동으로 테이블과 매핑됩니다.
 
-**2. RefreshEntity**
+### 2. Refresh Token (Redis)
 
-`RefreshEntity`는 **JWT 토큰 갱신(refresh)**에 사용되는 엔티티로, 사용자의 **refresh token**을 저장합니다. 이를 통해 사용자가 로그인 상태를 유지하면서 새롭게 access token을 발급받을 수 있습니다. 이 엔티티는 다음과 같은 필드를 가집니다:
+**refresh token**은 Redis에 저장되어, 사용자가 로그인할 때 발급된 refresh token을 관리하고, 토큰 만료 시 새로 발급받을 수 있게 해줍니다.
 
-- **id**: 고유 ID (자동 생성, 기본 키)
-- **username**: 사용자의 이메일 주소
-- **refresh**: 사용자의 refresh token
-- **expiration**: refresh token의 만료일
+### Redis 연동
 
-`RefreshEntity`는 사용자가 로그인할 때 발급되는 **refresh token**을 데이터베이스에 저장하여, 만료된 토큰을 갱신할 수 있도록 합니다. 이를 통해 클라이언트는 주기적으로 새로운 **access token**을 발급받을 수 있게 됩니다.
+- **로그인 시**: 사용자가 로그인하면 **refresh token**이 생성되고, 이를 Redis에 저장합니다.
+- **로그아웃 시**: 사용자가 로그아웃 요청을 보낼 때, **refresh token**을 Redis에서 삭제합니다.
+- **토큰 재발행 시**: 사용자가 refresh token을 제공하면, Redis에서 해당 token을 검증하고, 유효하면 새로운 **access token**을 발급하며 **refresh token**은 새로 Redis에 저장합니다.
+- **만료된 refresh token**: 일정 시간이 지난 후, Redis에서 자동으로 refresh token이 삭제됩니다.
 
 ## API 설명
 
@@ -73,6 +73,15 @@
 
 이 API는 **Spring Security**의 `UsernamePasswordAuthenticationFilter`를 확장한 `LoginFilter`에서 처리됩니다. 인증이 성공하면 JWT 토큰을 생성하여 응답합니다. 만약 인증 실패 시, 401 상태 코드와 함께 실패 응답을 반환합니다.
 
+### 3. 로그아웃 API
+
+- **경로**: `/logout`
+- **메서드**: `POST`
+- **설명**: 이 API는 사용자가 로그아웃 요청을 보낼 때, 클라이언트에서 전달된 **refresh token**을 검증하고, 만약 유효한 토큰이라면 해당 토큰을 **DB에서 삭제**하고, 클라이언트의 쿠키에서도 삭제하여 로그아웃을 처리합니다.
+- **요청 본문**: `refresh token`이 포함된 **쿠키**를 전송해야 합니다.
+- **응답**: 
+  - 로그아웃이 정상적으로 처리된 경우 `HTTP 200 OK` 상태 코드가 반환됩니다.
+  - 오류가 발생한 경우 적절한 상태 코드(`400 Bad Request`)와 함께 오류 응답이 반환됩니다.
 ---
 
 ### 3. 토큰 재발행 API
@@ -91,8 +100,7 @@
 
 ---
 
-
-# 사용 방법
+## 사용 방법
 
 ### 1. 새로운 레포지토리 생성
 1. **새로운 레포지토리**를 생성합니다.
@@ -117,11 +125,16 @@
 ### 4. IntelliJ 설정
 1. **`settings.gradle`** 파일에서 `rootProject.name`의 값을 **프로젝트 이름**으로 변경합니다.
 2. 변경 후, IntelliJ의 **코끼리** 아이콘을 눌러서 프로젝트를 **리프레시**합니다.
-3. **`main/java/com/example/securityserver`** 디렉토리에서 우클릭 후, **Refactor → Rename**을 선택하여 폴더 이름을 프로젝트 이름에 맞게 변경합니다. (이렇게 하면 모든 파일의 참조가 자동으로 변경됩니다.)
+3. **`main/java/com/example/securitywithredis`** 디렉토리에서 우클릭 후, **Refactor → Rename**을 선택하여 폴더 이름을 프로젝트 이름에 맞게 변경합니다.
 4. **`resources`** 폴더 내의 파일에서도 **프로젝트 이름**에 맞게 변경해주면 좋습니다.
 
 
 ## 📌관련 이슈
-- [단일 토큰](https://github.com/connorcoco/SecurityServer/issues/1)
-- [다중 토큰](https://github.com/connorcoco/SecurityServer/issues/3)
-- [추가 세팅](https://github.com/connorcoco/SecurityServer/issues/5)
+- [refreshToken redis에 저장하기](https://github.com/connorcoco/SecurityWithRedis/issues/1)
+
+
+## 📌연관 레포지토리
+
+### [Spring Security + Mysql를 이용한 Refresh Token 관리](https://github.com/connorcoco/SecurityServer)
+  기존의 SecurityServer 리포지토리는 MySQL을 사용하여 사용자 정보를 저장하고, refresh token도 MySQL에 저장하는 방식이었습니다. 이 프로젝트는 **SecurityWithRedis**에서 refresh token을 Redis에 저장하는 방법으로 개선되었습니다.
+
