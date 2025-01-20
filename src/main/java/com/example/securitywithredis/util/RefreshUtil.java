@@ -27,6 +27,7 @@ public class RefreshUtil {
 
     // Refresh token을 Redis에서 가져오기
     public String getRefreshToken(String username) {
+        System.out.println("Received refresh token: " + redisTemplate.opsForValue().get(username));
         return redisTemplate.opsForValue().get(username);
     }
 }

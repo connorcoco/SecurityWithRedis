@@ -23,11 +23,15 @@ public class RefreshTokenService {
     // Refresh Token을 요청에서 추출
     public String extractRefreshToken(HttpServletRequest request) {
         String refresh = null;
-        Cookie[] cookies = request.getCookies();
-        for (Cookie cookie : cookies) {
-            if (cookie.getName().equals("refresh")) {
-                refresh = cookie.getValue();
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals("refresh")) {
+                    refresh = cookie.getValue();
+                    break;
+                }
             }
+        }else{
+            throw new GeneralException(ErrorStatus.REFRESH_TOKEN_IS_NULL); // Refresh 토큰이 없으면 예외 처리
         }
         return refresh;
     }
@@ -40,10 +44,13 @@ public class RefreshTokenService {
             if (!category.equals("refresh")) {
                 throw new GeneralException(ErrorStatus.INVALID_REFRESH_TOKEN); // Refresh 토큰이 아닌 경우
             }
+
+            String username = jwtUtil.getUsername(refresh);
+
             // Redis에서 존재 여부 확인
-            String storedRefreshToken = refreshUtil.getRefreshToken(refresh);
+            String storedRefreshToken = refreshUtil.getRefreshToken(username);
             if (storedRefreshToken == null || !storedRefreshToken.equals(refresh)) {
-                throw new GeneralException(ErrorStatus.INVALID_REFRESH_TOKEN); // Redis에서 없거나 일치하지 않으면
+                throw new GeneralException(ErrorStatus.REFRESH_TOKEN_NOT_EXIST); // Redis에서 없거나 일치하지 않으면
             }
         } catch (ExpiredJwtException e) {
             throw new GeneralException(ErrorStatus.REFRESH_TOKEN_EXPIRED); // Expired Token 예외 처리
@@ -51,8 +58,8 @@ public class RefreshTokenService {
     }
 
     // Refresh Token을 Redis에서 제거
-    public void removeRefreshToken(String refresh) {
-        refreshUtil.removeRefreshToken(refresh); // Redis에서 제거
+    public void removeRefreshToken(String username) {
+        refreshUtil.removeRefreshToken(username); // Redis에서 제거
     }
 
     // Refresh Token을 Redis에 저장

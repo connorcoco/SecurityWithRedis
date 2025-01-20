@@ -17,9 +17,11 @@ import java.io.IOException;
 public class CustomLogoutFilter extends GenericFilterBean {
 
     private final RefreshTokenService refreshTokenService;
+    private final JWTUtil jwtUtil;
 
-    public CustomLogoutFilter(RefreshTokenService refreshTokenService) {
+    public CustomLogoutFilter(RefreshTokenService refreshTokenService, JWTUtil jwtUtil) {
         this.refreshTokenService = refreshTokenService;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -44,13 +46,12 @@ public class CustomLogoutFilter extends GenericFilterBean {
         if (refresh == null) {
             throw new GeneralException(ErrorStatus.INVALID_REFRESH_TOKEN); // Refresh Token이 없는 경우 예외 처리
         }
-
         // 유효성 검사 및 예외 발생
         refreshTokenService.validateRefreshToken(refresh);
 
-
+        String username = jwtUtil.getUsername(refresh);
         // 로그아웃 진행
-        refreshTokenService.removeRefreshToken(refresh);
+        refreshTokenService.removeRefreshToken(username);
         Cookie cookie = new Cookie("refresh", null);
         cookie.setMaxAge(0);
         cookie.setPath("/");
