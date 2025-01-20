@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 설정
-TEMPLATE_REPO="https://github.com/connorcoco/SecurityServer.git"
-OLD_PROJECT_NAME="SpringSecurity"
+TEMPLATE_REPO="https://github.com/connorcoco/SecurityWithRedis.git"
+OLD_PROJECT_NAME="SecurityWithRedis"
 NEW_PROJECT_NAME=$1
 REMOTE_REPO_URL=$2
 
