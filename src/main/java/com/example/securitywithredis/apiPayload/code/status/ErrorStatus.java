@@ -27,6 +27,8 @@ public enum ErrorStatus implements BaseCode {
     REFRESH_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "TOKEN4002", "리프레시 토큰이 만료되었습니다."),
     INVALID_ACCESS_TOKEN(HttpStatus.BAD_REQUEST, "TOKEN4003", "토큰이 올바르지 않습니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "TOKEN4004", "토큰이 올바르지 않습니다."),
+    REFRESH_TOKEN_NOT_EXIST(HttpStatus.BAD_REQUEST, "TOKEN4005", "리프레시 토큰이 존재하지 않습니다."),
+    REFRESH_TOKEN_IS_NULL(HttpStatus.BAD_REQUEST, "TOKEN4006", "리프레시 토큰이 null입니다."),
 
 
     // 예시,,,
