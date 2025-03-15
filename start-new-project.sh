@@ -30,11 +30,17 @@ find . -type f -exec sed -i '' "s/$OLD_PROJECT_NAME/$NEW_PROJECT_NAME/g" {} +
 # 패키지 이름 치환
 OLD_PACKAGE_PATH="src/main/java/com/example/$(echo $OLD_PROJECT_NAME | tr '[:upper:]' '[:lower:]')"
 NEW_PACKAGE_PATH="src/main/java/com/example/$(echo $NEW_PROJECT_NAME | tr '[:upper:]' '[:lower:]')"
+
+echo "OLD_PACKAGE_PATH: $OLD_PACKAGE_PATH"
+echo "NEW_PACKAGE_PATH: $NEW_PACKAGE_PATH"
+
 mv "$OLD_PACKAGE_PATH" "$NEW_PACKAGE_PATH"
 
 OLD_PACKAGE_PATH="src/test/java/com/example/$(echo $OLD_PROJECT_NAME | tr '[:upper:]' '[:lower:]')"
 NEW_PACKAGE_PATH="src/test/java/com/example/$(echo $NEW_PROJECT_NAME | tr '[:upper:]' '[:lower:]')"
-mv "$OLD_PACKAGE_PATH" "$NEW_PACKAGE_PATH"
+
+echo "OLD_PACKAGE_PATH (test): $OLD_PACKAGE_PATH"
+echo "NEW_PACKAGE_PATH (test): $NEW_PACKAGE_PATH"
 
 # Git 초기화 및 원격 레포지토리 설정
 git init
