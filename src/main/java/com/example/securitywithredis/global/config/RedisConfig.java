@@ -18,7 +18,6 @@ public class RedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // LettuceConnectionFactory 사용
         // todo: env 설정
         return new LettuceConnectionFactory(host, port); // localhost와 포트 설정
     }
