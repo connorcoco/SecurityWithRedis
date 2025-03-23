@@ -13,8 +13,8 @@ public class AuthConverter {
         return dateTime.format(formatter);
     }
 
-    public static AuthResponseDTO.JoinResultDTO toJoinResultDTO(UserEntity user){
-        return AuthResponseDTO.JoinResultDTO.builder()
+    public static AuthResponseDTO.SignUpResultDTO toSignUpResultDTO(UserEntity user){
+        return AuthResponseDTO.SignUpResultDTO.builder()
                 .memberId(user.getId())
                 .createAt(formatDateTime(user.getCreatedAt()))
                 .build();
