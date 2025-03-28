@@ -10,17 +10,17 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-public class JoinService {
+public class SignUpService {
 
     private final UserService userService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public JoinService(UserService userService, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public SignUpService(UserService userService, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.userService = userService;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
-    public UserEntity joinProcess(AuthRequestDTO.JoinDTO request){
+    public UserEntity signUpProcess(AuthRequestDTO.SignUpDTO request){
 
         boolean isExist = userService.existsByUsername(request.getUsername());
 

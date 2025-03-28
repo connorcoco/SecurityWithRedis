@@ -10,7 +10,7 @@ public class AuthResponseDTO {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class JoinResultDTO {
+    public static class SignUpResultDTO {
         private Long memberId;
         private String createAt;
     }

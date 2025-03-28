@@ -9,7 +9,7 @@ import lombok.Getter;
 public class AuthRequestDTO {
 
     @Getter
-    public static class JoinDTO{
+    public static class SignUpDTO{
 
         @NotEmpty
         @Email(message = "Invalid email format")
