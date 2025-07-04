@@ -8,7 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class UserConverter {
 
     //    UserEntity 객체를 만드는 작업 (클라이언트가 준 DTO to Entity)
-    public static UserEntity toUser(AuthRequestDTO.SignUpDTO request, BCryptPasswordEncoder bCryptPasswordEncoder){
+    public static UserEntity toUser(AuthRequestDTO.SignUpReq request, BCryptPasswordEncoder bCryptPasswordEncoder){
 
         return UserEntity.builder()
                 .username(request.getUsername())

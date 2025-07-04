@@ -42,7 +42,7 @@ public class ReissueService {
         refreshTokenService.removeRefreshToken(username); // Redis에서 기존 Refresh 토큰 제거
         refreshTokenService.addRefreshToken(username, newRefresh, 86400000L); // 새 Refresh 토큰 저장
 
-        response.setHeader("access", newAccess);
+        response.setHeader("Authorization", "Bearer " + newAccess);
         response.addCookie(CookieUtil.createCookie("refresh", newRefresh));
 
         return new ResponseEntity<>(HttpStatus.OK);
