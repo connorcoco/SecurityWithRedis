@@ -1,6 +1,10 @@
 package com.example.securitywithredis.domain.auth.jwt;
 
+import com.example.securitywithredis.domain.auth.converter.AuthConverter;
 import com.example.securitywithredis.domain.auth.dto.AuthRequestDTO;
+import com.example.securitywithredis.domain.auth.dto.AuthResponseDTO;
+import com.example.securitywithredis.domain.auth.security.CustomUserDetails;
+import com.example.securitywithredis.global.common.api.ApiResponse;
 import com.example.securitywithredis.global.common.util.CookieUtil;
 import com.example.securitywithredis.global.common.util.RefreshUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,8 +12,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
@@ -37,8 +40,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         try {
             // JSON 바디에서 username과 password 추출
             ObjectMapper objectMapper = new ObjectMapper();
-            AuthRequestDTO.LoginDTO loginRequest = null;
-            loginRequest = objectMapper.readValue(req.getInputStream(), AuthRequestDTO.LoginDTO.class);
+            AuthRequestDTO.LoginReq loginRequest = null;
+            loginRequest = objectMapper.readValue(req.getInputStream(), AuthRequestDTO.LoginReq.class);
 
             String username = loginRequest.getUsername();
             String password = loginRequest.getPassword();
@@ -60,33 +63,64 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     // 로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
     // Authentication(getPrincipal(), getCredentials(), getAuthorities(), isAuthenticated(), getDetails(), getName())
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+                                            FilterChain chain, Authentication authentication) throws IOException {
 
-        // 유저 정보
-        String username = authentication.getName();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
 
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
-        GrantedAuthority auth = iterator.next();
+        Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
+        String role = authorities.stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElseThrow(() -> new IllegalStateException("권한이 존재하지 않습니다."));
 
-        String role = auth.getAuthority();
+        String access = jwtUtil.createJwt("access", username, role, 600_000L);      // 10분
+        String refresh = jwtUtil.createJwt("refresh", username, role, 86_400_000L); // 24시간
 
-        // 토큰 생성
-        String access = jwtUtil.createJwt("access", username, role, 600000L);
-        String refresh = jwtUtil.createJwt("refresh", username, role, 86400000L);
+        refreshUtil.addRefreshToken(username, refresh, 86_400_000L);
 
-        // Refresh 토큰을 Redis에 저장
-        refreshUtil.addRefreshToken(username, refresh, 86400000L);
+        ApiResponse<AuthResponseDTO.LoginRes> apiResponse =
+                ApiResponse.onSuccess(AuthConverter.toLoginRes(userDetails, access, refresh));
 
-        //응답 설정
-        response.setHeader("access", access);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonResponse = objectMapper.writeValueAsString(apiResponse);
+
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Authorization", "Bearer " + access);
         response.addCookie(CookieUtil.createCookie("refresh", refresh));
         response.setStatus(HttpStatus.OK.value());
+        response.getWriter().write(jsonResponse);
     }
 
     //로그인 실패시 실행하는 메소드
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-        response.setStatus(401);
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        int statusCode = HttpStatus.UNAUTHORIZED.value(); // 기본값
+        String code = "AUTH401";
+        String message = "로그인에 실패했습니다.";
+
+        if (failed instanceof LockedException) {
+            statusCode = HttpStatus.FORBIDDEN.value();
+            code = "AUTH_LOCKED";
+            message = "계정이 잠겨있습니다.";
+        } else if (failed instanceof DisabledException) {
+            statusCode = HttpStatus.FORBIDDEN.value();
+            code = "AUTH_INACTIVE";
+            message = "비활성화된 계정입니다.";
+        } else if (failed instanceof BadCredentialsException) {
+            statusCode = HttpStatus.UNAUTHORIZED.value();
+            code = "AUTH_FAILED";
+            message = "아이디 또는 비밀번호가 잘못되었습니다.";
+        }
+
+        response.setStatus(statusCode);
+        response.getWriter().write(
+                String.format("{\"isSuccess\":false, \"code\":\"%s\", \"message\":\"%s\"}", code, message)
+        );
     }
 }

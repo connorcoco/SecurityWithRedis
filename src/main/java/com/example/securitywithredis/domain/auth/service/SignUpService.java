@@ -20,7 +20,7 @@ public class SignUpService {
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
-    public UserEntity signUpProcess(AuthRequestDTO.SignUpDTO request){
+    public UserEntity signUpProcess(AuthRequestDTO.SignUpReq request){
 
         boolean isExist = userService.existsByUsername(request.getUsername());
 
