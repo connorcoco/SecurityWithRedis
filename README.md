@@ -50,7 +50,7 @@
 
 #### 회원가입 API
 
-- **경로**: `/auth/join`
+- **경로**: `/auth/signup`
 - **메서드**: `POST`
 - **설명**: 사용자 회원가입을 처리하는 API입니다. 클라이언트에서 전달받은 `username`, `password`, `nickname`, `gender` 값을 기반으로 새 사용자를 등록합니다.
 - **요청 본문**: `username`, `password`, `nickname`, `gender` 필드를 포함한 JSON 형식의 데이터
@@ -75,7 +75,7 @@
 
 ### 3. 로그아웃 API
 
-- **경로**: `/logout`
+- **경로**: `/auth/logout`
 - **메서드**: `POST`
 - **설명**: 이 API는 사용자가 로그아웃 요청을 보낼 때, 클라이언트에서 전달된 **refresh token**을 검증하고, 만약 유효한 토큰이라면 해당 토큰을 **DB에서 삭제**하고, 클라이언트의 쿠키에서도 삭제하여 로그아웃을 처리합니다.
 - **요청 본문**: `refresh token`이 포함된 **쿠키**를 전송해야 합니다.
@@ -90,7 +90,7 @@
 
 #### 토큰 재발행 API
 
-- **경로**: `/reissue`
+- **경로**: `/auth/reissue`
 - **메서드**: `POST`
 - **설명**: 클라이언트가 보유한 **refresh token**을 통해 새로운 **access token**을 발급하는 API입니다. 이를 통해 유효기간이 만료된 access token을 갱신할 수 있습니다.
 - **요청 본문**: `refresh token`이 담긴 쿠키를 포함한 요청
